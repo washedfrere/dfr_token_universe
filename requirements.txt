@@ -4,3 +4,4 @@ importlib
 torch
 torchvision
 torchaudio
+silabeador==1.2.1
