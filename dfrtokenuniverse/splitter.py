@@ -1,4 +1,5 @@
 #Modulo que contiene un divisor basico a partir de caracters
+import re
 from dfrtokenuniverse.constantes import KDfrNlp 
 class SplitTextTokens():
     def __init__(self):
@@ -9,12 +10,20 @@ class SplitTextTokens():
         self.tipo_fragmento = 0
     def reset(self):
         self.splitted = []
+    # Devuelve una separacion rapida usando RegEx
+    def one_shot(self, texto):
+        """Devuelve una separacion rapida de un texto
+        args:
+            texto: texto a dividir
+        """
+        return [max(found) for found in self.K.REGEX_ONE_SHOT.findall(texto) if max(found) > ""]
+
     # Funcion interna que evalua el caracter segun el tipo de caracter
-    def _evalua_char_in(self, caracter, tipo_entrante, max_len=50):
+    def _evalua_char_in(self, caracter, tipo_entrante):
         """ Funcion interna que contabiliza segun el tipo de caracter
         """
         if self.tipo_fragmento == tipo_entrante:
-            if len(self.fragmento) >= max_len:
+            if len(self.fragmento) >= self.K.MAX_LEN_BY_TTKN[self.tipo_fragmento]:
                 self.splitted.append((self.tipo_fragmento, self.fragmento))
                 self.fragmento = caracter
             else:
@@ -25,22 +34,18 @@ class SplitTextTokens():
             self.fragmento = caracter
             self.tipo_fragmento = tipo_entrante
     # Funcion que divide un texto en tokens segun el tipo de caracter
-    def split_by_type(self, texto, max_len=50):
+    def split_by_type(self, texto):
         self.splitted = []
-        if isinstance(texto, bytes):
-            texto_ok = texto.decode("utf-8")
-        else:
-            texto_ok = f"{texto}"
         self.fragmento = ""
         self.tipo_fragmento = ""
-        for caracter in texto_ok:
+        for caracter in texto:
             if caracter in self.K.CHAR_TTKN:
                 if caracter == "\xa0":
-                    self._evalua_char_in(" ", self.K.CHAR_TTKN[caracter], max_len)
+                    self._evalua_char_in(" ", self.K.CHAR_TTKN[caracter])
                 else:
-                    self._evalua_char_in(caracter, self.K.CHAR_TTKN[caracter], max_len)
+                    self._evalua_char_in(caracter, self.K.CHAR_TTKN[caracter])
             else:
-                self._evalua_char_in(caracter, self.K.TTKN_UNK, max_len)
+                self._evalua_char_in(caracter, self.K.TTKN_UNK)
                 self.splitted.append((self.tipo_fragmento, self.fragmento))
                 self.fragmento = ""
                 self.tipo_fragmento = ""
@@ -80,7 +85,7 @@ class SplitTextTokens():
         else:
             return [n_gram]
     # Funcion que divide una palabra en silabas
-    def _split_silaba(self, palabra, dic_splitter):
+    def _split_silaba(self, palabra):
         """Funcion interna que divide un texto en silabas
         """
         silabizado = []
@@ -91,30 +96,22 @@ class SplitTextTokens():
                 while prueba in palabra[i_ini:]:
                     i_silaba = i_ini + palabra[i_ini:].index(prueba)
                     if i_silaba > 0 and palabra[i_silaba - 1] in "aeiouáéíóú":
-                        if silabico in dic_splitter:
-                            dic_splitter[silabico] += 1
-                        else:
-                            dic_splitter[silabico] = 1
-                        silabizado.extend(self._split_silaba(palabra[:i_silaba + self.K.SILABICOS[silabico]], dic_splitter))
+                        silabizado.extend(self._split_silaba(palabra[:i_silaba + self.K.SILABICOS[silabico]]))
                         if i_silaba + self.K.SILABICOS[silabico] < len(palabra):
-                            silabizado.extend(self._split_silaba(palabra[i_silaba  + self.K.SILABICOS[silabico]:], dic_splitter))
+                            silabizado.extend(self._split_silaba(palabra[i_silaba  + self.K.SILABICOS[silabico]:]))
                         return silabizado
                     i_ini = i_silaba + 1
             elif silabico in palabra:
                 i_silaba = palabra.index(silabico)
                 if (i_silaba > 0) or len(silabico) > 3:
-                    if silabico in dic_splitter:
-                        dic_splitter[silabico] += 1
-                    else:
-                        dic_splitter[silabico] = 1
-                    silabizado.extend(self._split_silaba(palabra[:i_silaba + self.K.SILABICOS[silabico]], dic_splitter))
+                    silabizado.extend(self._split_silaba(palabra[:i_silaba + self.K.SILABICOS[silabico]]))
                     if i_silaba + self.K.SILABICOS[silabico] < len(palabra):
-                        silabizado.extend(self._split_silaba(palabra[i_silaba  + self.K.SILABICOS[silabico]:], dic_splitter))
+                        silabizado.extend(self._split_silaba(palabra[i_silaba  + self.K.SILABICOS[silabico]:]))
                     return silabizado
         silabizado.append(palabra)
         return silabizado
     # Funcion que divide un texto en tokens - silabas (lista de n-gramas)
-    def text_tokens(self, texto, dic_splitter):
+    def text_tokens(self, texto):
         """Funcion que divide un texto en silabas
         """
         # Lanza funcion recursiva con cada fragmento entre espacios
@@ -132,7 +129,7 @@ class SplitTextTokens():
                 ngrama = objetos[1]
             else:
                 ngrama = ""
-            silabizado = self._split_silaba(ngrama, dic_splitter)
+            silabizado = self._split_silaba(ngrama)
             if len(silabizado) > 1 and len(silabizado[-1]) == 1 and silabizado[-1] in "bcdfghjklmnñpqrstvwxyz":
                 silabizado[-2] += silabizado[-1]
                 silabizado.pop()

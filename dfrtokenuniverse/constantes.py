@@ -1,4 +1,5 @@
 # Modulo de constantes para el tokenizador
+import re
 class  KDfrNlp:
     def __init__(self):
       # Tipos de token
@@ -28,12 +29,41 @@ class  KDfrNlp:
       # Diccionario de tipos de token asociados a sus caracteres
       # El orden se ha dispuesto por probabilidad de aparicion en textos castellanos
       self.TIPOS_TKN = {
-          self.TTKN_SEP: ' ,.-":;\'/\\\n+_\xa0',
+          self.TTKN_SEP: ' ,.-":;\'/\\\n+_\xa0=',
           self.TTKN_LET: 'eaonsirldtcPuCAmpbgvfyóhqíjzáéUERxkñúwüçIOÁÉÍÓÚÜBÇDFGHJKLMNÑQSTVWXYZ',
           self.TTKN_SIM: '|><)(%{}][º&$#?!ª¿¡·@€~¬',
           self.TTKN_DIG: '1029835467',
           self.TTKN_ESP: '\t\b\a\f\r\v'
       }
+      
+      self.MAX_LEN_BY_TTKN = {
+          self.TTKN_SEP: 2,
+          self.TTKN_LET: 40,
+          self.TTKN_SIM: 3,
+          self.TTKN_DIG: 3,
+          self.TTKN_ESP: 2
+      }
+      
+      
+      self.REGEX_ONE_SHOT = re.compile(
+          r'(' +
+          r'[BCÇDFGHJKLMNÑPQRSTVWXYZbcçdfghjklmnñpqrstuvwxyz]{0,2}' +
+          r'[aeiouáéíóúüAEIOUÁÉÍÓÚÜ]{1,2}' +
+          r'[BCÇDFGHJKLMNÑPQRSTVWXYZbcçdfghjklmnñpqrstuvwxyz]{1,2}' +
+          r')|(' +
+          r'[aeiouyáéíóúüAEIOUYÁÉÍÓÚÜ]{0,2}' +
+          r'[BCÇDFGHJKLMNÑPQRSTVWXYZbcçdfghjklmnñpqrstuvwxyz]{0,3}' +
+          r'[aeiouyáéíóúüAEIOUYÁÉÍÓÚÜ]{1,2}' +
+          r')|(' +
+          r'[aeiouyáéíóúüAEIOUYÁÉÍÓÚÜ]{1,2}' +
+          r')|(' +
+          r'[BCÇDFGHJKLMNÑPQRSTVWXYZbcçdfghjklmnñpqrstuvwxyz]{1,3}' +
+          r')|(' +
+          r'[ .,:¡!¿?*+_/="(){}[\]\-\\\']{1,4}' +
+          r')|(' +
+          r'[0123456789]{1,4}' +
+          r')'
+      )
 
       # Diccionario de atributos de token asociados a sus caracteres
       self.ATRIBUTOS_TKN = {
@@ -60,7 +90,7 @@ class  KDfrNlp:
           'Ü': self.TTKN_LET, 'B': self.TTKN_LET, 'Ç': self.TTKN_LET, 'D': self.TTKN_LET, 'F': self.TTKN_LET, 'G': self.TTKN_LET, 'H': self.TTKN_LET, 'J': self.TTKN_LET,
           'K': self.TTKN_LET, 'L': self.TTKN_LET, 'M': self.TTKN_LET, 'N': self.TTKN_LET, 'Ñ': self.TTKN_LET, 'Q': self.TTKN_LET, 'S': self.TTKN_LET, 'T': self.TTKN_LET,
           'V': self.TTKN_LET, 'W': self.TTKN_LET, 'X': self.TTKN_LET, 'Y': self.TTKN_LET, 'Z': self.TTKN_LET, '\x08': self.TTKN_ESP, '\x07': self.TTKN_ESP, '\x0c': self.TTKN_ESP,
-          '\r': self.TTKN_ESP, '\x0b': self.TTKN_ESP
+          '\r': self.TTKN_ESP, '\x0b': self.TTKN_ESP, "=": self.TTKN_SIM
       }
 
       self.AUTO_SPLITTERS = {
